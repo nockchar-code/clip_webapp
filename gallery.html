@@ -3,69 +3,126 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>트윗 갤러리</title>
+  <title>Clip 갤러리</title>
   <style>
-    body { font-family: 'Noto Sans KR', sans-serif; text-align: center; background: #fafafa; margin: 0; padding: 20px; }
-    h2 { font-size: 22px; margin-bottom: 10px; }
-    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; justify-items: center; }
-    .tweet-img {
-      width: 100px; height: 100px; object-fit: cover;
-      border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      transition: transform 0.2s; cursor: pointer;
+    body {
+      font-family: "Apple SD Gothic Neo", sans-serif;
+      text-align: center;
+      background: #fafafa;
+      margin: 0;
+      padding: 30px;
     }
-    .tweet-img:hover { transform: scale(1.05); }
+    h1 {
+      font-size: 22px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 20px;
+      padding: 20px;
+    }
+    .thumb {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
     .fallback {
-      width: 100px; height: 100px; display: flex; align-items: center; justify-content: center;
-      border-radius: 12px; background: #e0e0e0; color: #777; font-size: 32px;
+      font-size: 40px;
+      color: #999;
     }
-    a { text-decoration: none; color: inherit; }
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+    .back {
+      margin-top: 20px;
+      display: block;
+      color: #7e57c2;
+    }
   </style>
 </head>
 <body>
-  <h2>📁 <span id="folderName"></span> 폴더</h2>
+  <h1>📁 <span id="folderName"></span> 폴더</h1>
   <p id="countInfo"></p>
   <div id="gallery" class="grid"></div>
-  <p><a href="index.html">← 폴더 선택으로 돌아가기</a></p>
+  <a href="index.html" class="back">← 폴더 선택으로 돌아가기</a>
 
   <script>
-    const params = new URLSearchParams(location.search);
-    const folder = params.get('folder');
-    document.getElementById('folderName').textContent = folder;
-    const key = 'folder_' + folder;
-    const tweets = JSON.parse(localStorage.getItem(key) || '[]');
-    document.getElementById('countInfo').textContent = `트윗 ${tweets.length}개`;
+    async function loadGallery() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const folder = urlParams.get("folder");
+      document.getElementById("folderName").textContent = folder;
 
-    const gallery = document.getElementById('gallery');
+      const key = `folder_${folder}`;
+      const data = JSON.parse(localStorage.getItem(key) || "[]");
+      document.getElementById("countInfo").textContent = `트윗 ${data.length}개`;
 
-    async function loadPreview(url) {
-      try {
-        const api = `https://publish.twitter.com/oembed?url=${encodeURIComponent(url)}&omit_script=true`;
-        const res = await fetch(api);
-        const data = await res.json();
+      const gallery = document.getElementById("gallery");
+      gallery.innerHTML = "";
 
-        // oEmbed 데이터 안에는 HTML이 포함됨 — <img> 태그 추출
-        const match = data.html.match(/<img[^>]+src="([^"]+)"/);
-        const imgUrl = match ? match[1] : null;
+      // X.com → Twitter.com 변환 함수
+      const normalizeUrl = (url) =>
+        url.replace("https://x.com/", "https://twitter.com/");
 
-        const img = document.createElement('img');
-        img.className = 'tweet-img';
-        img.src = imgUrl || 'https://abs.twimg.com/icons/apple-touch-icon-192x192.png';
-        img.alt = '트윗 이미지';
-        img.onclick = () => window.open(url, '_blank');
-        gallery.appendChild(img);
-      } catch (e) {
-        const fallback = document.createElement('div');
-        fallback.className = 'fallback';
-        fallback.textContent = '🚫';
-        gallery.appendChild(fallback);
+      for (const link of data) {
+        const normalized = normalizeUrl(link);
+
+        // 트윗 ID 추출
+        const match = normalized.match(/status\/(\d+)/);
+        const tweetId = match ? match[1] : null;
+
+        const div = document.createElement("div");
+        div.className = "thumb";
+
+        if (!tweetId) {
+          div.innerHTML = '<div class="fallback">🚫</div>';
+          gallery.appendChild(div);
+          continue;
+        }
+
+        try {
+          // oEmbed API 호출
+          const oembedUrl = `https://publish.twitter.com/oembed?url=${encodeURIComponent(normalized)}&omit_script=true`;
+          const res = await fetch(oembedUrl);
+          const data = await res.json();
+
+          // 이미지 URL 추출 (첫 img 태그)
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(data.html, "text/html");
+          const img = doc.querySelector("img");
+
+          if (img && img.src) {
+            const imgEl = document.createElement("img");
+            imgEl.src = img.src;
+            const linkEl = document.createElement("a");
+            linkEl.href = normalized;
+            linkEl.target = "_blank";
+            linkEl.appendChild(imgEl);
+            div.appendChild(linkEl);
+          } else {
+            div.innerHTML = '<div class="fallback">❌</div>';
+          }
+        } catch (err) {
+          console.error(err);
+          div.innerHTML = '<div class="fallback">❌</div>';
+        }
+
+        gallery.appendChild(div);
       }
     }
 
-    if (tweets.length === 0) {
-      gallery.innerHTML = '<p>아직 저장된 트윗이 없습니다.</p>';
-    } else {
-      tweets.forEach(loadPreview);
-    }
+    loadGallery();
   </script>
 </body>
 </html>
