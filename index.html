@@ -1,39 +1,40 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>내 X 폴더</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clip WebApp</title>
 <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="p-4 bg-gray-100 text-gray-800">
-  <h1 class="text-2xl font-bold mb-3">📁 내 트윗 폴더</h1>
-  <div id="folders" class="flex gap-3"></div>
+<body class="bg-gray-100 flex flex-col items-center min-h-screen p-6">
+  <h1 class="text-2xl font-bold mb-4">📎 Clip WebApp</h1>
+
+  <div class="flex gap-4 mb-6">
+    <a href="gallery.html?folder=A" class="bg-blue-500 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-600">A 폴더</a>
+    <a href="gallery.html?folder=B" class="bg-green-500 text-white px-4 py-2 rounded-lg shadow hover:bg-green-600">B 폴더</a>
+    <a href="gallery.html?folder=C" class="bg-purple-500 text-white px-4 py-2 rounded-lg shadow hover:bg-purple-600">C 폴더</a>
+  </div>
+
+  <p class="text-gray-600 text-center max-w-md">
+    이 페이지는 트윗 공유 시 자동으로 열려, 선택한 폴더에 링크를 저장합니다.
+  </p>
 
   <script>
-  const folders = ["A","B","C"];
-  const params = new URLSearchParams(window.location.search);
-  const addLink = params.get("add");
-  const folderParam = params.get("folder");
+    const params = new URLSearchParams(window.location.search);
+    const tweetURL = params.get("add");
+    const folder = params.get("folder");
 
-  // 1. 링크 추가 처리
-  if(addLink && folderParam) {
-    const saved = JSON.parse(localStorage.getItem("tweetAlbums")||"{}");
-    if(!saved[folderParam]) saved[folderParam] = [];
-    if(!saved[folderParam].includes(addLink)) saved[folderParam].push(addLink);
-    localStorage.setItem("tweetAlbums", JSON.stringify(saved));
-    alert(`폴더 ${folderParam}에 트윗을 추가했습니다!`);
-  }
+    if (tweetURL && folder) {
+      const key = `folder_${folder}`;
+      const data = JSON.parse(localStorage.getItem(key) || "[]");
 
-  // 2. 폴더 목록 출력
-  const box = document.getElementById("folders");
-  folders.forEach(f=>{
-    const btn=document.createElement("a");
-    btn.textContent=f;
-    btn.href=`gallery.html?folder=${f}`;
-    btn.className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600";
-    box.appendChild(btn);
-  });
+      if (!data.includes(tweetURL)) {
+        data.push(tweetURL);
+        localStorage.setItem(key, JSON.stringify(data));
+      }
+
+      alert(`✅ 폴더 [${folder}]에 트윗을 추가했습니다!\n${tweetURL}`);
+    }
   </script>
 </body>
 </html>
