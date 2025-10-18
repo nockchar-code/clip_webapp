@@ -1,42 +1,69 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gallery Debug</title>
-<script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📁 폴더 보기</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; background: #f7f7f7; }
+    .gallery { 
+      display: grid; 
+      grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); 
+      gap: 10px; 
+      padding: 15px;
+    }
+    .thumb {
+      border-radius: 10px;
+      overflow: hidden;
+      background: #fff;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    }
+    .thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+  </style>
 </head>
-<body class="bg-gray-50 min-h-screen p-6 flex flex-col items-center">
-  <h1 id="folderTitle" class="text-2xl font-bold mb-4"></h1>
-  <pre id="debug" class="bg-white rounded-lg shadow p-4 w-full max-w-md text-xs overflow-auto mb-6"></pre>
-  <div id="gallery" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 w-full max-w-4xl"></div>
-  <a href="index.html" class="mt-6 text-blue-600 underline">← 폴더 선택으로 돌아가기</a>
+<body>
+  <h2>📁 폴더 A</h2>
+  <div id="debug"></div>
+  <div id="gallery" class="gallery"></div>
+
+  <p><a href="./index.html">← 폴더 선택으로 돌아가기</a></p>
 
   <script>
-    function log(msg) {
-      document.getElementById('debug').innerHTML += msg + "\n";
-    }
-
-    const params = new URLSearchParams(window.location.search);
-    const folder = params.get("folder");
-    document.getElementById("folderTitle").textContent = `📁 폴더 ${folder}`;
-
-    const key = `folder_${folder}`;
+    const urlParams = new URLSearchParams(window.location.search);
+    const folder = urlParams.get("folder") || "A";
+    const key = "folder_" + folder;
     const data = JSON.parse(localStorage.getItem(key) || "[]");
+
+    document.getElementById("debug").innerHTML = `
+      <div>key=${key}</div>
+      <div>data=${JSON.stringify(data)}</div>
+    `;
+
     const gallery = document.getElementById("gallery");
 
-    log("📦 key=" + key);
-    log("📦 data=" + JSON.stringify(data));
-
-    if (!data.length) {
-      gallery.innerHTML = `<p class="text-gray-500 text-center col-span-3">아직 ${folder} 폴더에 저장된 트윗이 없습니다.</p>`;
+    if (data.length === 0) {
+      gallery.innerHTML = "<p>아직 저장된 트윗이 없습니다.</p>";
     } else {
-      data.forEach(url => {
-        log("🔗 트윗 URL=" + url);
-        const card = document.createElement("div");
-        card.className = "p-4 bg-white rounded-lg shadow";
-        card.innerHTML = `<a href="${url}" target="_blank" class="text-blue-600">${url}</a>`;
-        gallery.appendChild(card);
+      data.forEach(link => {
+        // 트윗 썸네일을 가져오는 임시 프록시 이미지 (x.com 직접 접근 불가하므로)
+        // 트윗 URL의 oEmbed API 활용 가능 (비공식 프록시 사용)
+        const encoded = encodeURIComponent(link);
+        const imgSrc = `https://publish.twitter.com/oembed?url=${encoded}`;
+        
+        // 각 썸네일 요소 생성
+        const div = document.createElement("div");
+        div.className = "thumb";
+        div.innerHTML = `
+          <a href="${link}" target="_blank">
+            <img src="https://v1.screenshot.11ty.dev/${link}/small/" alt="tweet preview">
+          </a>
+        `;
+        gallery.appendChild(div);
       });
     }
   </script>
