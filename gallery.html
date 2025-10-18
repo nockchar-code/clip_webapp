@@ -3,71 +3,39 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>폴더 보기</title>
+<title>Gallery Debug</title>
 <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-50 min-h-screen p-6 flex flex-col items-center">
   <h1 id="folderTitle" class="text-2xl font-bold mb-4"></h1>
+  <pre id="debug" class="bg-white rounded-lg shadow p-4 w-full max-w-md text-xs overflow-auto mb-6"></pre>
   <div id="gallery" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 w-full max-w-4xl"></div>
-
   <a href="index.html" class="mt-6 text-blue-600 underline">← 폴더 선택으로 돌아가기</a>
 
   <script>
+    function log(msg) {
+      document.getElementById('debug').innerHTML += msg + "\n";
+    }
+
     const params = new URLSearchParams(window.location.search);
     const folder = params.get("folder");
     document.getElementById("folderTitle").textContent = `📁 폴더 ${folder}`;
 
     const key = `folder_${folder}`;
-    const links = JSON.parse(localStorage.getItem(key) || "[]");
+    const data = JSON.parse(localStorage.getItem(key) || "[]");
     const gallery = document.getElementById("gallery");
 
-    if (!links.length) {
+    log("📦 key=" + key);
+    log("📦 data=" + JSON.stringify(data));
+
+    if (!data.length) {
       gallery.innerHTML = `<p class="text-gray-500 text-center col-span-3">아직 ${folder} 폴더에 저장된 트윗이 없습니다.</p>`;
     } else {
-      links.forEach(url => {
+      data.forEach(url => {
+        log("🔗 트윗 URL=" + url);
         const card = document.createElement("div");
-        card.className = "relative bg-white rounded-xl shadow hover:shadow-lg transition overflow-hidden";
-
-        // 카드 클릭 시 트윗 열기
-        const link = document.createElement("a");
-        link.href = url;
-        link.target = "_blank";
-
-        const title = document.createElement("p");
-        title.className = "p-3 text-gray-700 text-sm truncate";
-        title.textContent = url;
-
-        // 이미지 미리보기
-        fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`)
-          .then(res => res.json())
-          .then(data => {
-            const html = data.contents;
-            const ogImg = html.match(/<meta property="og:image" content="([^"]+)"/)?.[1];
-            if (ogImg) {
-              const img = document.createElement("img");
-              img.src = ogImg;
-              img.alt = "미리보기";
-              img.className = "w-full h-48 object-cover";
-              link.prepend(img);
-            }
-          });
-
-        // 삭제 버튼
-        const delBtn = document.createElement("button");
-        delBtn.textContent = "✖";
-        delBtn.className = "absolute top-2 right-2 bg-red-500 text-white rounded-full px-2 py-1 text-xs hover:bg-red-600";
-        delBtn.onclick = (e) => {
-          e.preventDefault();
-          if (confirm("이 트윗을 삭제할까요?")) {
-            const newData = links.filter(l => l !== url);
-            localStorage.setItem(key, JSON.stringify(newData));
-            card.remove();
-          }
-        };
-
-        link.appendChild(title);
-        card.appendChild(link);
-        card.appendChild(delBtn);
+        card.className = "p-4 bg-white rounded-lg shadow";
+        card.innerHTML = `<a href="${url}" target="_blank" class="text-blue-600">${url}</a>`;
         gallery.appendChild(card);
       });
     }
