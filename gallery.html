@@ -1,36 +1,57 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>📁 폴더 보기</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>📁 트윗 폴더</title>
   <style>
-    body { font-family: sans-serif; text-align: center; background: #f7f7f7; }
-    .gallery { 
-      display: grid; 
-      grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); 
-      gap: 10px; 
-      padding: 15px;
+    body {
+      font-family: system-ui, sans-serif;
+      text-align: center;
+      background-color: #f9f9f9;
+      margin: 0;
     }
-    .thumb {
-      border-radius: 10px;
-      overflow: hidden;
+    h2 {
+      margin-top: 20px;
+    }
+    #debug {
+      font-size: 12px;
+      color: #666;
       background: #fff;
-      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+      border-radius: 10px;
+      margin: 10px;
+      padding: 10px;
+      box-shadow: 0 0 4px rgba(0,0,0,0.1);
     }
-    .thumb img {
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 15px;
+      padding: 20px;
+    }
+    .tweet-card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 0 6px rgba(0,0,0,0.1);
+      overflow: hidden;
+      transition: transform 0.2s;
+    }
+    .tweet-card:hover {
+      transform: translateY(-3px);
+    }
+    iframe {
+      border: none;
       width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
+    }
+    a {
+      color: #6a0dad;
     }
   </style>
 </head>
 <body>
-  <h2>📁 폴더 A</h2>
+  <h2>📁 트윗 폴더</h2>
   <div id="debug"></div>
   <div id="gallery" class="gallery"></div>
-
   <p><a href="./index.html">← 폴더 선택으로 돌아가기</a></p>
 
   <script>
@@ -39,9 +60,10 @@
     const key = "folder_" + folder;
     const data = JSON.parse(localStorage.getItem(key) || "[]");
 
+    document.querySelector("h2").innerText = `📁 폴더 ${folder}`;
     document.getElementById("debug").innerHTML = `
-      <div>key=${key}</div>
-      <div>data=${JSON.stringify(data)}</div>
+      <b>key:</b> ${key}<br>
+      <b>data:</b> ${JSON.stringify(data)}
     `;
 
     const gallery = document.getElementById("gallery");
@@ -49,20 +71,23 @@
     if (data.length === 0) {
       gallery.innerHTML = "<p>아직 저장된 트윗이 없습니다.</p>";
     } else {
-      data.forEach(link => {
-        // 트윗 썸네일을 가져오는 임시 프록시 이미지 (x.com 직접 접근 불가하므로)
-        // 트윗 URL의 oEmbed API 활용 가능 (비공식 프록시 사용)
-        const encoded = encodeURIComponent(link);
-        const imgSrc = `https://publish.twitter.com/oembed?url=${encoded}`;
-        
-        // 각 썸네일 요소 생성
+      data.forEach(async (link) => {
         const div = document.createElement("div");
-        div.className = "thumb";
-        div.innerHTML = `
-          <a href="${link}" target="_blank">
-            <img src="https://v1.screenshot.11ty.dev/${link}/small/" alt="tweet preview">
-          </a>
-        `;
+        div.className = "tweet-card";
+
+        try {
+          // 트윗의 oEmbed HTML 가져오기
+          const api = `https://publish.twitter.com/oembed?url=${encodeURIComponent(link)}&omit_script=true&align=center`;
+          const res = await fetch(api);
+          const json = await res.json();
+
+          // iframe 대신 HTML로 직접 출력
+          div.innerHTML = json.html;
+        } catch (err) {
+          console.error(err);
+          div.innerHTML = `<a href="${link}" target="_blank">${link}</a>`;
+        }
+
         gallery.appendChild(div);
       });
     }
