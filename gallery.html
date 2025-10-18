@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>📁 트윗 폴더</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📁 트윗 이미지 폴더</title>
   <style>
     body {
       font-family: system-ui, sans-serif;
       text-align: center;
-      background-color: #f9f9f9;
+      background: #f9f9f9;
       margin: 0;
     }
     h2 {
@@ -17,48 +17,51 @@
     #debug {
       font-size: 12px;
       color: #666;
-      background: #fff;
-      border-radius: 10px;
       margin: 10px;
       padding: 10px;
-      box-shadow: 0 0 4px rgba(0,0,0,0.1);
     }
     .gallery {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 15px;
-      padding: 20px;
+      grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+      gap: 10px;
+      padding: 15px;
     }
-    .tweet-card {
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 0 6px rgba(0,0,0,0.1);
+    .thumb {
+      border-radius: 10px;
       overflow: hidden;
-      transition: transform 0.2s;
-      padding: 5px;
+      background: #fff;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+      transition: transform 0.2s ease;
     }
-    .tweet-card:hover {
-      transform: translateY(-3px);
+    .thumb:hover {
+      transform: scale(1.05);
+    }
+    .thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    a {
+      color: #6a0dad;
+      text-decoration: none;
     }
   </style>
 </head>
 <body>
-  <h2>📁 트윗 폴더</h2>
+  <h2>📁 트윗 이미지 폴더</h2>
   <div id="debug"></div>
   <div id="gallery" class="gallery"></div>
   <p><a href="./index.html">← 폴더 선택으로 돌아가기</a></p>
 
   <script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const folder = urlParams.get("folder") || "A";
+    const params = new URLSearchParams(window.location.search);
+    const folder = params.get("folder") || "A";
     const key = "folder_" + folder;
     const data = JSON.parse(localStorage.getItem(key) || "[]");
 
     document.querySelector("h2").innerText = `📁 폴더 ${folder}`;
-    document.getElementById("debug").innerHTML = `
-      <b>key:</b> ${key}<br>
-      <b>data:</b> ${JSON.stringify(data)}
-    `;
+    document.getElementById("debug").innerHTML = `<b>key:</b> ${key}<br><b>개수:</b> ${data.length}`;
 
     const gallery = document.getElementById("gallery");
 
@@ -67,19 +70,29 @@
     } else {
       data.forEach(async (link) => {
         const div = document.createElement("div");
-        div.className = "tweet-card";
+        div.className = "thumb";
 
         try {
-          const embedURL = `https://publish.twitter.com/oembed?url=${encodeURIComponent(link)}&omit_script=true&align=center`;
+          const embedURL = `https://publish.twitter.com/oembed?url=${encodeURIComponent(link)}&omit_script=true`;
           const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(embedURL)}`;
           const res = await fetch(proxy);
           const json = await res.json();
-          const html = JSON.parse(JSON.stringify(json)).contents;
+          const html = json.contents;
 
-          div.innerHTML = html;
+          // 이미지 URL 추출 (jpg, png, webp 등)
+          const match = html.match(/https:\/\/pbs\.twimg\.com\/media\/[A-Za-z0-9_-]+\.(jpg|png|webp)/);
+          const imgURL = match ? match[0] : "https://abs.twimg.com/icons/apple-touch-icon-192x192.png";
+
+          div.innerHTML = `
+            <a href="${link}" target="_blank">
+              <img src="${imgURL}" alt="tweet image">
+            </a>
+          `;
         } catch (err) {
           console.error(err);
-          div.innerHTML = `<a href="${link}" target="_blank">${link}</a>`;
+          div.innerHTML = `<a href="${link}" target="_blank">
+            <img src="https://abs.twimg.com/icons/apple-touch-icon-192x192.png" alt="tweet">
+          </a>`;
         }
 
         gallery.appendChild(div);
