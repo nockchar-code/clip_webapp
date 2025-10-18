@@ -35,16 +35,10 @@
       box-shadow: 0 0 6px rgba(0,0,0,0.1);
       overflow: hidden;
       transition: transform 0.2s;
+      padding: 5px;
     }
     .tweet-card:hover {
       transform: translateY(-3px);
-    }
-    iframe {
-      border: none;
-      width: 100%;
-    }
-    a {
-      color: #6a0dad;
     }
   </style>
 </head>
@@ -76,13 +70,13 @@
         div.className = "tweet-card";
 
         try {
-          // 트윗의 oEmbed HTML 가져오기
-          const api = `https://publish.twitter.com/oembed?url=${encodeURIComponent(link)}&omit_script=true&align=center`;
-          const res = await fetch(api);
+          const embedURL = `https://publish.twitter.com/oembed?url=${encodeURIComponent(link)}&omit_script=true&align=center`;
+          const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(embedURL)}`;
+          const res = await fetch(proxy);
           const json = await res.json();
+          const html = JSON.parse(JSON.stringify(json)).contents;
 
-          // iframe 대신 HTML로 직접 출력
-          div.innerHTML = json.html;
+          div.innerHTML = html;
         } catch (err) {
           console.error(err);
           div.innerHTML = `<a href="${link}" target="_blank">${link}</a>`;
