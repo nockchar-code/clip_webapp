@@ -1,51 +1,51 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
+  <title>Clip 폴더 선택</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Clip 메인</title>
   <style>
     body {
       font-family: "Apple SD Gothic Neo", sans-serif;
+      background: #f6f6f9;
       text-align: center;
-      background: #fafafa;
-      margin: 0;
-      padding: 60px 20px;
+      padding: 40px;
     }
-    h1 { font-size: 26px; margin-bottom: 30px; color: #1d9bf0; }
-    .folders {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 15px;
+    h1 {
+      font-size: 28px;
+      margin-bottom: 30px;
     }
     .folder-btn {
-      width: 200px;
-      padding: 15px;
-      background: #1d9bf0;
-      color: white;
-      border: none;
-      border-radius: 10px;
+      display: inline-block;
+      margin: 10px;
+      padding: 15px 30px;
       font-size: 18px;
+      border-radius: 10px;
+      border: none;
+      color: white;
       cursor: pointer;
     }
-    .folder-btn:hover {
-      background: #1a8cd8;
+    .a { background: #4a90e2; }
+    .b { background: #3eb489; }
+    .c { background: #9b59b6; }
+    .footer {
+      margin-top: 50px;
+      font-size: 14px;
+      color: #888;
     }
   </style>
 </head>
 <body>
   <h1>📁 Clip 폴더 선택</h1>
+  <button class="folder-btn a" onclick="openFolder('A')">A 폴더</button>
+  <button class="folder-btn b" onclick="openFolder('B')">B 폴더</button>
+  <button class="folder-btn c" onclick="openFolder('C')">C 폴더</button>
 
-  <div class="folders">
-    <button class="folder-btn" onclick="openFolder('A')">A 폴더</button>
-    <button class="folder-btn" onclick="openFolder('B')">B 폴더</button>
-    <button class="folder-btn" onclick="openFolder('C')">C 폴더</button>
-  </div>
+  <div class="footer">© 2025 Clip WebApp</div>
 
   <script>
-    function openFolder(name) {
-      location.href = `gallery.html?folder=${name}`;
+    function openFolder(folder) {
+      location.href = `gallery.html?folder=${folder}`;
     }
   </script>
 </body>
