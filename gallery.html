@@ -13,16 +13,19 @@
     }
     h1 { font-size: 26px; margin-bottom: 10px; }
     .info { color: #666; margin-bottom: 20px; }
+
+    /* 기본 3열 */
     .gallery {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 10px;
       justify-items: center;
       margin-top: 10px;
+      transition: all 0.3s ease;
     }
-    /* ✨ 1열 보기 전환용 */
-    .gallery.single {
-      grid-template-columns: 1fr;
+    /* 1열 보기 시 */
+    .gallery.one-column {
+      grid-template-columns: repeat(1, 1fr);
     }
 
     .thumb {
@@ -32,17 +35,28 @@
       background: #fff;
       box-shadow: 0 2px 6px rgba(0,0,0,0.1);
       overflow: hidden;
-      transition: transform 0.2s;
+      transition: transform 0.2s, max-width 0.3s;
       position: relative;
     }
-    .thumb:hover { transform: scale(1.05); }
+    /* 1열 보기 시 이미지 확대 */
+    .gallery.one-column .thumb {
+      max-width: 360px;
+    }
+
+    .thumb:hover { transform: scale(1.03); }
     .thumb img {
       width: 100%;
       height: 120px;
       object-fit: cover;
       display: block;
       cursor: pointer;
+      transition: height 0.3s ease;
     }
+    /* 1열 보기 시 이미지 높이 증가 */
+    .gallery.one-column .thumb img {
+      height: 200px;
+    }
+
     .del {
       position: absolute;
       bottom: 0;
@@ -57,9 +71,8 @@
       opacity: 0;
       transition: opacity 0.2s;
     }
-    .thumb:hover .del {
-      opacity: 1;
-    }
+    .thumb:hover .del { opacity: 1; }
+
     a.back {
       display: inline-block;
       margin-top: 30px;
@@ -67,6 +80,7 @@
       color: #7b3fe4;
       font-weight: bold;
     }
+
     .msg {
       color: #333;
       font-size: 15px;
@@ -74,34 +88,31 @@
       word-break: break-all;
     }
 
-    /* ✨ 버튼 디자인 */
-    .toolbar {
-      margin-bottom: 15px;
+    .btn-group {
+      margin: 10px 0 20px;
     }
-    .toolbar button {
+    .view-btn {
       background: #7b3fe4;
       color: white;
       border: none;
-      padding: 8px 14px;
-      border-radius: 6px;
+      padding: 8px 16px;
+      border-radius: 8px;
+      margin: 0 4px;
       cursor: pointer;
       font-size: 14px;
-      margin: 0 5px;
+      transition: background 0.2s;
     }
-    .toolbar button.active {
-      background: #4f1ac6;
+    .view-btn:hover {
+      background: #9b5ff5;
     }
   </style>
 </head>
 <body>
   <h1 id="folderTitle">📁 폴더</h1>
-
-  <!-- ✨ 보기 전환 버튼 -->
-  <div class="toolbar">
-    <button id="gridBtn" class="active">3열 보기</button>
-    <button id="listBtn">1열 보기</button>
+  <div class="btn-group">
+    <button class="view-btn" id="threeCol">3열 보기</button>
+    <button class="view-btn" id="oneCol">1열 보기</button>
   </div>
-
   <div class="info" id="infoText"></div>
   <div class="msg" id="msg"></div>
   <div class="gallery" id="gallery"></div>
@@ -135,7 +146,6 @@
       }
     }
 
-    // ✅ 즉시 반영
     data = JSON.parse(localStorage.getItem(folderKey) || "[]");
 
     function renderGallery() {
@@ -173,22 +183,15 @@
       });
     }
 
+    // ✅ 보기 전환 버튼
+    document.getElementById("threeCol").onclick = () => {
+      gallery.classList.remove("one-column");
+    };
+    document.getElementById("oneCol").onclick = () => {
+      gallery.classList.add("one-column");
+    };
+
     renderGallery();
-
-    // ✨ 정렬 전환 기능
-    const gridBtn = document.getElementById("gridBtn");
-    const listBtn = document.getElementById("listBtn");
-
-    gridBtn.onclick = () => {
-      gallery.classList.remove("single");
-      gridBtn.classList.add("active");
-      listBtn.classList.remove("active");
-    };
-    listBtn.onclick = () => {
-      gallery.classList.add("single");
-      listBtn.classList.add("active");
-      gridBtn.classList.remove("active");
-    };
   </script>
 </body>
 </html>
