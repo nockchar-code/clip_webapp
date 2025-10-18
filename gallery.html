@@ -2,102 +2,117 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
+  <title>📁 트윗 폴더 보기</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>📁 트윗 이미지 폴더</title>
   <style>
     body {
-      font-family: system-ui, sans-serif;
-      text-align: center;
-      background: #f9f9f9;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #f8f9fa;
       margin: 0;
+      padding: 20px;
+      text-align: center;
     }
     h2 {
-      margin-top: 20px;
+      margin-bottom: 8px;
     }
-    #debug {
-      font-size: 12px;
-      color: #666;
-      margin: 10px;
-      padding: 10px;
+    .info {
+      color: #555;
+      font-size: 14px;
+      margin-bottom: 16px;
     }
-    .gallery {
+    .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-      gap: 10px;
-      padding: 15px;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 16px;
+      padding: 10px;
+      justify-items: center;
     }
-    .thumb {
-      border-radius: 10px;
+    .tweet {
+      width: 140px;
+      height: 140px;
+      border-radius: 12px;
+      background: white;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
       overflow: hidden;
-      background: #fff;
-      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: center;
+      align-items: center;
       transition: transform 0.2s ease;
     }
-    .thumb:hover {
+    .tweet:hover {
       transform: scale(1.05);
     }
-    .thumb img {
+    img {
       width: 100%;
       height: 100%;
       object-fit: cover;
-      display: block;
     }
     a {
-      color: #6a0dad;
+      color: #7c3aed;
       text-decoration: none;
+    }
+    .back {
+      display: inline-block;
+      margin-top: 20px;
+      color: #7c3aed;
+      font-weight: 500;
     }
   </style>
 </head>
 <body>
-  <h2>📁 트윗 이미지 폴더</h2>
-  <div id="debug"></div>
-  <div id="gallery" class="gallery"></div>
-  <p><a href="./index.html">← 폴더 선택으로 돌아가기</a></p>
+  <h2>📁 <span id="folderName"></span></h2>
+  <div class="info">
+    <b>key:</b> <span id="folderKey"></span><br>
+    <span id="tweetCount"></span>
+  </div>
+  <div id="tweetGrid" class="grid">로딩 중...</div>
+  <a href="index.html" class="back">← 폴더 선택으로 돌아가기</a>
 
   <script>
+    // URL에서 folder 이름 추출
     const params = new URLSearchParams(window.location.search);
-    const folder = params.get("folder") || "A";
-    const key = "folder_" + folder;
-    const data = JSON.parse(localStorage.getItem(key) || "[]");
+    const folderKey = params.get("folder");
 
-    document.querySelector("h2").innerText = `📁 폴더 ${folder}`;
-    document.getElementById("debug").innerHTML = `<b>key:</b> ${key}<br><b>개수:</b> ${data.length}`;
+    document.getElementById("folderName").textContent = folderKey ? folderKey.toUpperCase() : "폴더";
+    document.getElementById("folderKey").textContent = folderKey;
 
-    const gallery = document.getElementById("gallery");
+    // 로컬스토리지에서 해당 폴더 데이터 불러오기
+    const data = JSON.parse(localStorage.getItem("folder_" + folderKey) || "[]");
+    document.getElementById("tweetCount").textContent = `개수: ${data.length}`;
+    const grid = document.getElementById("tweetGrid");
+    grid.innerHTML = "";
 
-    if (data.length === 0) {
-      gallery.innerHTML = "<p>아직 저장된 트윗이 없습니다.</p>";
-    } else {
-      data.forEach(async (link) => {
-        const div = document.createElement("div");
-        div.className = "thumb";
+    // ✅ 트윗 URL → 썸네일 이미지 가져오기
+    async function fetchThumbnail(url) {
+      try {
+        // oEmbed API 호출
+        const apiUrl = `https://publish.twitter.com/oembed?url=${encodeURIComponent(url)}`;
+        const res = await fetch(apiUrl);
+        const json = await res.json();
 
-        try {
-          const embedURL = `https://publish.twitter.com/oembed?url=${encodeURIComponent(link)}&omit_script=true`;
-          const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(embedURL)}`;
-          const res = await fetch(proxy);
-          const json = await res.json();
-          const html = json.contents;
-
-          // 이미지 URL 추출 (jpg, png, webp 등)
-          const match = html.match(/https:\/\/pbs\.twimg\.com\/media\/[A-Za-z0-9_-]+\.(jpg|png|webp)/);
-          const imgURL = match ? match[0] : "https://abs.twimg.com/icons/apple-touch-icon-192x192.png";
-
-          div.innerHTML = `
-            <a href="${link}" target="_blank">
-              <img src="${imgURL}" alt="tweet image">
-            </a>
-          `;
-        } catch (err) {
-          console.error(err);
-          div.innerHTML = `<a href="${link}" target="_blank">
-            <img src="https://abs.twimg.com/icons/apple-touch-icon-192x192.png" alt="tweet">
-          </a>`;
-        }
-
-        gallery.appendChild(div);
-      });
+        // html 내부에 이미지가 있을 경우 추출
+        const match = json.html.match(/https:\/\/pbs\.twimg\.com\/media\/[A-Za-z0-9_-]+\.(jpg|png|jpeg)/);
+        if (match) return match[0];
+      } catch (e) {
+        console.warn("❌ 썸네일 불러오기 실패:", url);
+      }
+      return "https://abs.twimg.com/icons/apple-touch-icon-192x192.png"; // 기본 트위터 아이콘
     }
+
+    // 폴더 내 각 트윗 표시
+    async function renderTweets() {
+      for (const url of data) {
+        const thumb = await fetchThumbnail(url);
+        const div = document.createElement("a");
+        div.href = url;
+        div.target = "_blank";
+        div.className = "tweet";
+        div.innerHTML = `<img src="${thumb}" alt="tweet">`;
+        grid.appendChild(div);
+      }
+    }
+
+    renderTweets();
   </script>
 </body>
 </html>
